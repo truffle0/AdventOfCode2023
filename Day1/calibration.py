@@ -3,7 +3,7 @@ import re
 from typing import Generator
 
 ### Part 1 ###
-def calibrate1(source) -> int:
+def part_one(source) -> int:
     # - Reads each line of input
     # - Adds the first and last numbers
     # - returns the total sum
@@ -38,6 +38,7 @@ def calibrate1(source) -> int:
 
     return total
 
+
 ### Part 2 ###
 LOW_NUMBERS = {
     'one'   :   '1',
@@ -50,6 +51,7 @@ LOW_NUMBERS = {
     'eight' :   '8',
     'nine'  :   '9',
 }
+
 
 def get_num_words(line:str) -> list[tuple[str, iter]]:
     '''Searches the string for all number words, in order,
@@ -66,7 +68,8 @@ def get_num_words(line:str) -> list[tuple[str, iter]]:
 
     return result
 
-def calibrate2(source) -> int:
+
+def part_two(source) -> int:
     # - Reads each line of input
     # - Scans the numbers words
     # - Selects either first/last digit or word
@@ -111,8 +114,8 @@ def calibrate2(source) -> int:
 
     return total
 
+
 if __name__ == "__main__":
-    # Process all the lines by replacing number words
     text = list(line for line in sys.stdin)
-    print(f"Part 1: {calibrate1(text)}")
-    print(f"Part 2: {calibrate2(text)}")
+    print(f"Part 1: {part_one(text)}")
+    print(f"Part 2: {part_two(text)}")
