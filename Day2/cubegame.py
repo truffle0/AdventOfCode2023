@@ -82,7 +82,17 @@ def part_two(source) -> int:
 	return total
 
 if __name__ == "__main__":
-	all_games = [ line for line in sys.stdin ]
+	if len(sys.argv) <= 1 or sys.argv[1] == '-':
+		print("Reading from stdin.")
+		text = [ line for line in sys.stdin ]
+	else:
+		try:
+			print(f"Reading from {sys.argv[1]}.")
+			with open(sys.argv[1]) as f:
+				text = [ line for line in sys.stdin ]
+		except FileNotFoundError:
+			print(f"File {sys.argv[1]} not found!")
+			exit()
 	
-	print(f"Total - Part 1: {part_one(all_games)}")
-	print(f"Total - Part 2: {part_two(all_games)}")
+	print(f"Total - Part 1: {part_one(text)}")
+	print(f"Total - Part 2: {part_two(text)}")
