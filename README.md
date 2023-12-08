@@ -23,4 +23,12 @@ Language: **Rust**
 
 [main.rs](Day3/src/main.rs): cargo run << [input.txt](Day3/input.txt)
 - [x] Part 1: 532445
-- [ ] Part 2: 79842967
+- [x] Part 2: 79842967
+
+---
+#### [Day 4](https://adventofcode.com/2023/day/4)
+Language: **Rust**
+
+[main.rs](Day4/src/main.rs): cargo run << [input.txt](Day3/input.txt)
+- [x] Part 1: 18653
+- [ ] Part 2: 
