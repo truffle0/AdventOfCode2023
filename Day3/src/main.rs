@@ -22,11 +22,25 @@ enum Item {
 impl Item {
     fn is_symbol(&self) -> bool {
         match self {
-            Item::Symbol(_) => return true,
-            Item::Digit(_) => return false,
-            Item::Space => return false,
+            Item::Symbol(_) => true,
+            _ => false,
         }
     }
+
+	fn is_digit(&self) -> bool {
+		match self {
+			Item::Digit(_) => true,
+			_ => false,
+		}
+	}
+
+	fn char(&self) -> char {
+		match self {
+			Item::Symbol(c) => *c,
+			Item::Digit(c) => *c,
+			Item::Space => '.',
+		}
+	}
 }
 
 /*
@@ -63,14 +77,13 @@ impl Plan {
 
     fn get(&self, row: usize, col: usize) -> Result<&Item> {
         self.check_bounds(row, col)?;
-        self.validate_width(row)?;
+		self.validate_width(row)?;
 
         Ok(&self.grid[row][col])
     }
 
     fn set(&mut self, value: Item, row: usize, col: usize) -> Result<()> {
         self.check_bounds(row, col)?;
-        self.validate_width(row)?;
 
         self.grid[row][col] = value;
         Ok(())
@@ -116,8 +129,95 @@ impl Plan {
         Ok(false)
     }
 
+	fn find_adjacent_numbers(&self, row:usize, col:usize) -> Result<Vec<i32>> {
+		self.check_bounds(row, col)?;
+		let mut digits = Vec::new();
+
+		// Determine the coords of digits surrounding the position
+		if col > 0 && self.grid[row][col-1].is_digit() {
+			digits.push((row, col-1));
+		}
+		if self.grid[row][col].is_digit() {
+			digits.push((row, col));
+		}
+		if col < self.width - 1 && self.grid[row][col+1].is_digit() {
+			digits.push((row, col+1));
+		}
+
+		if row > 0 {
+			if col > 0 && self.grid[row-1][col-1].is_digit() {
+				digits.push((row-1, col-1));
+			}
+			if self.grid[row-1][col].is_digit() {
+				digits.push((row-1, col));
+			}
+			if col < self.width - 1 && self.grid[row-1][col+1].is_digit() {
+				digits.push((row-1, col+1));
+			}
+		}
+
+		if row < self.height - 1 {
+			if col > 0 && self.grid[row+1][col-1].is_digit() {
+				digits.push((row+1, col-1));
+			}
+			if self.grid[row+1][col].is_digit() {
+				digits.push((row+1, col));
+			}
+			if col < self.width - 1 && self.grid[row+1][col+1].is_digit() {
+				digits.push((row+1, col+1));
+			}
+		}
+
+		// Once digits have been found, construct numbers and eliminate duplicates
+		let mut nums = Vec::new();
+		let mut starts = Vec::new();
+		for (row, col) in digits {
+			let (i, start) = self.walk_read_number(row, col)?;
+
+			if !starts.contains(&(row, start)) {
+				nums.push(i);
+				starts.push((row, start));
+			}
+		}
+
+		Ok(nums)
+	}
+
+	fn walk_read_number(&self, row:usize, col:usize) -> Result<(i32, usize)> {
+		self.check_bounds(row, col)?;
+
+		// Find the start of the number
+		let mut start = col;
+		while start > 0 {
+			if self.grid[row][start - 1].is_digit() {
+				start -= 1;
+			} else {
+				break;
+			}
+		}
+
+		let mut num = String::new();
+		for i in start..self.grid[row].len() {
+			if self.grid[row][i].is_digit() {
+				num.push(self.grid[row][i].char());
+			} else {
+				break;
+			}
+		}
+
+		if num.len() == 0 {
+			return Err(Error::new(ErrorKind::InvalidData, "Value provided is not a number!"));
+		}
+
+		match num.parse::<i32>() {
+			Err(why) => Err(Error::new(ErrorKind::InvalidData, why.to_string())),
+			Ok(i) => Ok((i, start)),
+		}
+	}
+
     fn check_bounds(&self, row: usize, col: usize) -> Result<()> {
         if row < self.width && col < self.height {
+			self.validate_width(row)?;
             Ok(())
         } else {
             Err(Error::new(
@@ -196,7 +296,7 @@ fn read_the_plan(source: Vec<String>) -> Result<Plan> {
     return Ok(plan);
 }
 
-fn add_valid_numbers(plan: Plan) -> Result<i32> {
+fn add_valid_numbers(plan: &Plan) -> Result<i32> {
     let mut total = 0;
 
     let mut adjacent = false;
@@ -239,6 +339,31 @@ fn add_valid_numbers(plan: Plan) -> Result<i32> {
     Ok(total)
 }
 
+fn sum_gear_ratios(plan: &Plan) -> Result<i64> {
+	
+	let mut total = 0;
+	for row in 0..plan.height {
+
+		for col in 0..plan.width {
+			match plan.get(row,col)? {
+				&Item::Symbol(c) => {
+					if c == '*' {
+						let nums = plan.find_adjacent_numbers(row, col)?;
+
+						if nums.len() == 2 {
+							total += (nums[0] * nums[1]) as i64;
+						} else {
+						}
+					}
+				},
+				_ => {},
+			}
+		}
+	}
+
+	Ok(total)
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let path = if args.len() > 1 && args[1] != "-" {
@@ -247,8 +372,12 @@ fn main() {
         None
     };
 
+	// Part 1
     let source = open_reader(path).unwrap();
     let plan = read_the_plan(source).unwrap();
 
-    println!("Part 1: {}", add_valid_numbers(plan).unwrap());
+    println!("Part 1: {}", add_valid_numbers(&plan).unwrap());
+
+	// Part 2
+	println!("Part 2: {}", sum_gear_ratios(&plan).unwrap());
 }
