@@ -31,4 +31,4 @@ Language: **Rust**
 
 [main.rs](Day4/src/main.rs): cargo run << [input.txt](Day3/input.txt)
 - [x] Part 1: 18653
-- [ ] Part 2: 
+- [x] Part 2: 5921508
