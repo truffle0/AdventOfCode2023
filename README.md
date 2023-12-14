@@ -33,7 +33,8 @@ Language: **Rust**
 - [x] Part 1: 18653
 - [x] Part 2: 5921508
 
+---
 #### [Day 5](https://adventofcode.com/2023/day/5)
 Language: **Python**
 - [x] Part 1: 1181555926
-- [ ] Part 2:
+- [x] Part 2: 37806486  (function runtime was about 4 hours ;-;)

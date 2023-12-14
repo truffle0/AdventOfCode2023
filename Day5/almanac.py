@@ -1,9 +1,9 @@
 import re
 import sys
 import logging
-from typing import Generator
+from typing import Generator, Sequence
 from tqdm import tqdm
-from itertools import chain, cycle
+from itertools import chain
 
 class TypeMap:
 	def __init__(self, text:str):
