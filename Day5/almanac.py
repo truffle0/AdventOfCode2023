@@ -1,9 +1,11 @@
 import re
 import sys
 import logging
-from typing import Generator, Sequence
+from typing import Generator
 from tqdm import tqdm
 from itertools import chain
+
+from ReversibleIter import ReversibleIter
 
 class TypeMap:
 	def __init__(self, text:str):
@@ -23,7 +25,7 @@ class TypeMap:
 		self.output = match.group(2)
 
 		# Find and store mappings
-		self._mappings:dict[range, int] = {}
+		self._mappings:list[tuple[range, int]] = []
 
 		re_mapping = re.compile(r"^(\d+) (\d+) (\d+)$", re.MULTILINE)
 		for match in re.findall(re_mapping, text):
@@ -37,28 +39,63 @@ class TypeMap:
 			# Associate the range with the conversion factor/offset
 			map_range = range(x, x + offset)
 			map_convert = y - x
-			self._mappings[map_range] = map_convert
+			self._mappings.append((map_range, map_convert))
+		
+		# Sort ranges
+		self._mappings.sort(key=lambda x: x[0].start)
+
+		# Check for overlapping ranges
+		if len(self._mappings) > 1:
+			prev = self._mappings[0][0]
+			for cur, _ in self._mappings[1:]:
+				if cur.start < (prev.start + len(prev)):
+					raise ValueError("Overlapping ranges!")
 
 	def converter(self):
 		"""Return a generator that performs mapping efficiently in a stream"""
 		def generator() -> Generator[int, int, None]:
 			# Infinitely loop over the mappings, returning the mappings
 			i = yield 0
+
+			# Small functions to find the start/end of ranges
+			start = lambda x: x.start
+			end = lambda x: x.start + len(x)
+
+			# Set up map window with current and previous ranges
+			ranges = ReversibleIter(self._mappings)
+			cur_range, offset = ranges.cur
+			prev = None
 			while True:
-				for map_range, offset in self._mappings.items():
-					if i in map_range:
-						while i in map_range:
-							i = yield i + offset
-						break
+				if i in cur_range:
+					# Stay here while i is in the current range
+					while i in cur_range:
+						i = yield i + offset
+				elif i < start(cur_range) and i >= end(prev):
+					while i < start(cur_ranges) and i >= end(prev):
+						i = yield i
+				elif i >= end(cur_range):
+					if cur_range == ranges.end[0]:
+						while i > end(cur_range):
+							i = yield i
+					else:
+						prev = cur_range
+						cur_range, offset = ranges.next()
+				elif prev is None:
+					while i < start(cur_range):
+						i = yield i
+				elif i < end(prev):
+					cur_range, offset = ranges.prev()
+					prev = None if ranges.last() is None else ranges.last()[0]
 				else:
-					i = yield i
-		
+					# Fail safe, but should be impossible
+					raise StopIteration
+
 		gen = generator()
 		next(gen)	# Initalize the generator
 		return gen
 
 	def __getitem__(self, index):
-		for map_range, offset in self._mappings.items():
+		for map_range, offset in self._mappings:
 			if index in map_range:
 				return index + offset
 		else:
@@ -66,7 +103,7 @@ class TypeMap:
 	
 	def __repr__(self) -> str:
 		string = f"{self.input}-to-{self.output} map:\n"
-		for map_in, map_offset in self._mappings.items():
+		for map_in, map_offset in self._mappings:
 			x = map_in.start
 			y = x + map_offset
 			offset = len(map_in)
@@ -96,11 +133,6 @@ class Almanac:
 
 		self._associations[assoc.input][assoc.output] = assoc
 		logging.debug(f"Registered TypeMap: {assoc.input} -> {assoc.output}")
-
-	def search_path(self, from_type:str, to_type:str) -> list[str]:
-		"""Generates the shortest possible path to convert
-			one type to another."""
-		pass
 		
 	def convert(self, val:int, from_type:str, to_type:str) -> int:
 		if to_type in self[from_type]:
