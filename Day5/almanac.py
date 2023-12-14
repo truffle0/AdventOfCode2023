@@ -1,6 +1,9 @@
 import re
 import sys
 import logging
+from typing import Generator
+from tqdm import tqdm
+from itertools import chain, cycle
 
 class TypeMap:
 	def __init__(self, text:str):
@@ -20,7 +23,7 @@ class TypeMap:
 		self.output = match.group(2)
 
 		# Find and store mappings
-		self._mappings:dict[range, range] = {}
+		self._mappings:dict[range, int] = {}
 
 		re_mapping = re.compile(r"^(\d+) (\d+) (\d+)$", re.MULTILINE)
 		for match in re.findall(re_mapping, text):
@@ -31,27 +34,41 @@ class TypeMap:
 			y = int(match[0])
 			offset = int(match[2])
 
-			map_input = range(x, x + offset)
-			map_output = range(y, y + offset)
+			# Associate the range with the conversion factor/offset
+			map_range = range(x, x + offset)
+			map_convert = y - x
+			self._mappings[map_range] = map_convert
 
-			self._mappings[map_input] = map_output
-
-	def map(self, index:int) -> int:
-		return self.__getitem__(index)
+	def converter(self):
+		"""Return a generator that performs mapping efficiently in a stream"""
+		def generator() -> Generator[int, int, None]:
+			# Infinitely loop over the mappings, returning the mappings
+			i = yield 0
+			while True:
+				for map_range, offset in self._mappings.items():
+					if i in map_range:
+						while i in map_range:
+							i = yield i + offset
+						break
+				else:
+					i = yield i
+		
+		gen = generator()
+		next(gen)	# Initalize the generator
+		return gen
 
 	def __getitem__(self, index):
-		for map_in, map_out in self._mappings.items():
-			if index in map_in:
-				offset = index - map_in.start
-				return map_out[offset]
+		for map_range, offset in self._mappings.items():
+			if index in map_range:
+				return index + offset
 		else:
 			return index
 	
 	def __repr__(self) -> str:
 		string = f"{self.input}-to-{self.output} map:\n"
-		for map_in, map_out in self._mappings.items():
+		for map_in, map_offset in self._mappings.items():
 			x = map_in.start
-			y = map_out.start
+			y = x + map_offset
 			offset = len(map_in)
 
 			string += f"{x} {y} {offset}\n"
@@ -91,6 +108,7 @@ class Almanac:
 		else:
 			raise ValueError(f"No mapping from {from_type} to {to_type} available!")
 
+
 	def convert_path(self, val:int, conv_path:list[str]) -> int:
 		"""Takes a list of types (as strings) and follows that
 			order of transformations, returning the result"""
@@ -104,6 +122,30 @@ class Almanac:
 		
 		return val
 
+	def path_converter(self, path:list[str]):
+		"""Creates a generator that efficiently maps streams of ints"""
+		steps = []
+		prev_type = path[0]
+		for next_type in path[1:]:
+			steps.append(self._associations[prev_type][next_type].converter())
+			prev_type = next_type
+		
+		def generator() -> Generator[int, int, None]:
+			i = yield 0
+			conversion = steps
+			while True:
+				if isinstance(i, int):
+					for gen in conversion:
+						i = gen.send(i)
+					i = yield i
+				else:
+					i = yield 0
+
+		# Create and initialize generator
+		gen = generator()
+		next(gen)
+		return gen
+
 	def __getitem__(self, item) -> list[str]:
 		if item not in self._alltypes:
 			raise NameError("No such type!")
@@ -112,7 +154,7 @@ class Almanac:
 			return list(self._associations[item].keys())
 		
 		return []
-	
+		
 	def __contains__(self, item) -> bool:
 		return item in self._alltypes
 
@@ -138,7 +180,22 @@ def parse_config(source:str) -> tuple[list[int],Almanac,list[str]]:
 	return seeds, maps, conv_order
 
 
-def part_one(source:str) -> int|None:
+def group(iterable, n):
+	data = iter(iterable)
+	elements = []
+
+	for elem in data:
+		elements.append(elem)
+		if len(elements) >= n:
+			yield tuple(elements)
+			elements.clear()
+	
+	if elements:
+		elements.extend([None] * (n - len(elements)))
+		yield tuple(elements)
+
+
+def part_one(source:str) -> int:
 	seeds, almanac, conversion = parse_config(source)
 	logging.debug(f"Using mapping: {'->'.join(conversion)}")
 
@@ -146,6 +203,26 @@ def part_one(source:str) -> int|None:
 
 	return min(locations)
 
+def part_two(source:str) -> int:
+	"""Fair warning: this function is horribly inefficient
+		Requiring roughly 2 billion iterations to cover the entire range"""
+	seeds, almanac, conversion = parse_config(source)
+	
+	# interpret pairs in the list as ranges
+	ranges = []
+	for start, length in group(seeds, 2):
+		ranges.append(range(start, start + length))
+	
+	# Create converter
+	converter = almanac.path_converter(conversion)
+	next(converter)	# Initialize generator
+
+	total = sum(len(ran) for ran in ranges)
+	result = min(converter.send(i)
+		for i in tqdm(chain(*ranges), total=total, desc="Maps"))
+
+	# Return the minimum value
+	return result
 
 if __name__ == "__main__":
 	logging.basicConfig(level=logging.INFO)
@@ -162,3 +239,4 @@ if __name__ == "__main__":
 			exit()
 	
 	print(f"Part 1: {part_one(text)}")
+	print(f"Part 2: {part_two(text)}")
