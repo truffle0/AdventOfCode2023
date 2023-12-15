@@ -36,5 +36,15 @@ Language: **Rust**
 ---
 #### [Day 5](https://adventofcode.com/2023/day/5)
 Language: **Python**
+
+[almanac.py](Day5/almanac.py) < [input.txt](Day5/input.txt)
 - [x] Part 1: 1181555926
 - [x] Part 2: 37806486  (function runtime was about 4 hours ;-;)
+
+---
+#### [Day 6](https://adventofcode.com/2023/day/6)
+Language: **Python**
+
+[race.py](Day6/race.py) < [input.txt](Day6/input.txt)
+- [x] Part 1: 781200
+- [x] Part 2: 49240091

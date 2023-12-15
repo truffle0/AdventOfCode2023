@@ -70,8 +70,8 @@ class TypeMap:
 					# Stay here while i is in the current range
 					while i in cur_range:
 						i = yield i + offset
-				elif i < start(cur_range) and i >= end(prev):
-					while i < start(cur_ranges) and i >= end(prev):
+				elif i < start(cur_range) and (prev is None or i >= end(prev)):
+					while i < start(cur_range) and (prev is None or i >= end(prev)):
 						i = yield i
 				elif i >= end(cur_range):
 					if cur_range == ranges.end[0]:
@@ -80,9 +80,6 @@ class TypeMap:
 					else:
 						prev = cur_range
 						cur_range, offset = ranges.next()
-				elif prev is None:
-					while i < start(cur_range):
-						i = yield i
 				elif i < end(prev):
 					cur_range, offset = ranges.prev()
 					prev = None if ranges.last() is None else ranges.last()[0]
@@ -251,7 +248,7 @@ def part_two(source:str) -> int:
 
 	total = sum(len(ran) for ran in ranges)
 	result = min(converter.send(i)
-		for i in tqdm(chain(*ranges), total=total, desc="Maps"))
+		for i in tqdm(chain(*ranges), total=total, desc="Maps", leave=False))
 
 	# Return the minimum value
 	return result
