@@ -48,3 +48,11 @@ Language: **Python**
 [race.py](Day6/race.py) < [input.txt](Day6/input.txt)
 - [x] Part 1: 781200
 - [x] Part 2: 49240091
+
+---
+#### [Day 7](https://adventofcode.com/2023/day/7)
+Language: **Haskell**
+
+[cards](Day7/cards) < [input.txt](Day7/input.txt)
+- [x] Part 1: 250474325
+- [ ] Part 2:
