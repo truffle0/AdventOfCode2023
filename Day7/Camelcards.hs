@@ -1,20 +1,24 @@
-module Camelcards(Hand, Card, readHand)
+module Camelcards(Hand, Card, readHand, convertJacks, bestJoker)
 where
     import Data.List (group, sortBy, sort)
     import Data.Function (on)
     import Data.Maybe (fromJust)
+    import Useful (unmaybe)
+    import Data.Text.Array (equal)
     
     --- Implementation of Card type ---
-    data Card = Ace | King | Queen | Jack | Num Int
+    data Card = Ace | King | Queen | Jack | Num Int | Joker
 
-    rank :: Card -> Int
     -- Integer ranking of each Card
-    rank Ace = 14
-    rank King = 13
-    rank Queen = 12
-    rank Jack = 11
-    rank (Num i) = i
-
+    rank :: Card -> Int
+    rank c = case c of
+        Ace -> 14
+        King -> 13
+        Queen -> 12
+        Jack -> 11
+        (Num i) -> i
+        Joker -> 0
+    
     instance Eq Card where
         (==) a b = rank a == rank b
 
@@ -26,7 +30,22 @@ where
         show King = "K"
         show Queen = "Q"
         show Jack = "J"
+        show Joker = "j"
         show (Num i) = show i
+
+    jacksToJokers :: [Card] -> [Card]
+    jacksToJokers [] = []
+    jacksToJokers (c:cs)
+        | c == Jack = Joker : jacksToJokers cs
+        | otherwise = c : jacksToJokers cs
+
+    jokerExpand :: [Card] -> [[Card]]
+    jokerExpand [] = [[]]
+    jokerExpand (c:cs)
+        | c == Joker = [ x : xs | xs <- jokerExpand cs, x <- cards ]
+        | otherwise = [ c:xs | xs <- jokerExpand cs ]
+        where
+            cards = [ Ace, King, Queen, Jack] ++ [ Num i | i <- [1..10] ]
 
 
     --- Implementation of Hand types ---
@@ -56,7 +75,7 @@ where
             else compareByCards (cards a) (cards b)
             where
                 rank :: Hand->Int
-                rank (Hand value _) = case value of
+                rank hand = case value hand of
                     FiveOfAKind -> 7
                     FourOfAKind -> 6
                     FullHouse -> 5
@@ -66,6 +85,8 @@ where
                     HighCard -> 1
 
                 compareByCards :: [Card]->[Card]->Ordering
+                compareByCards [] _ = EQ
+                compareByCards _ [] = EQ
                 compareByCards (a:as) (b:bs) =
                     if a == b then compareByCards as bs
                     else compare a b
@@ -113,3 +134,12 @@ where
         | otherwise = arrangeHand $ map fromJust cards
         where
             cards = map readCard st
+    
+    bestJoker :: Hand -> Hand
+    bestJoker (Hand value cards) = Hand bestValue cards
+        where
+            allEquiv = unmaybe $ map arrangeHand $ jokerExpand cards
+            (Hand bestValue _) = maximum allEquiv
+
+    convertJacks :: Hand -> Hand
+    convertJacks (Hand value cards) = Hand value $ jacksToJokers cards

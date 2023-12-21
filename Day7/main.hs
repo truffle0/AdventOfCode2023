@@ -1,16 +1,16 @@
 module Main (Main.main)
 where
     import System.IO
-    import System.Exit
     import System.Environment
     import Control.Monad
-    import Camelcards (Hand, Card, readHand)
+    import Camelcards (Hand, Card, readHand, bestJoker, convertJacks)
     import Data.List.Split (splitOn)
     import Text.Read (readMaybe)
     import Data.List (sortBy)
     import Data.Function (on)
     import Control.Exception (IOException, catch)
     import Data.Maybe (fromMaybe, fromJust)
+    import Useful (both, unmaybe, ends, unempty)
     
     readFromFile :: FilePath->IO [String]
     readFromFile path = do
@@ -25,34 +25,33 @@ where
             else do
                 next <- readlines src
                 return (line : next) 
-
-
-    both :: Maybe a -> Maybe b -> Maybe (a, b)
-    both (Just a) (Just b) = Just (a, b)
-    both _ _ = Nothing
-
-    processLine :: String -> Maybe (Hand, Int)
-    processLine str = both (readHand hand) (readMaybe bet)
-        where
-            split = splitOn " " str
-            hand = head split
-            bet = last split
     
     processInput :: [String] -> [(Hand, Int)]
     processInput [] = []
-    processInput (s:st) =
-        case processLine s of
-            Nothing -> processInput st
-            (Just x) -> x : processInput st
+    processInput lines = unmaybe $ map forLine pairs
+        where
+            pairs = [ ends $ splitOn " " ln | ln <- lines ]
+
+            forLine :: (String,String) -> Maybe (Hand, Int)
+            forLine (hand,bet) = both (readHand hand) (readMaybe bet)
+            
+
+    score :: Int -> [(Hand, Int)] -> [Int]
+    score _ [] = []
+    score i ((_, bet):st) = (bet * i) : score (i + 1) st
 
     partOne :: [(Hand, Int)]->Int
     partOne plays = sum values
         where
             values = score 1 $ sortBy (compare `on` fst) plays
+    
+    partTwo :: [(Hand, Int)] -> Int
+    partTwo plays = sum values
+        where
+            values = score 1 $ sortBy (compare `on` fst) (map toJokers plays)
 
-            score :: Int -> [(Hand, Int)] -> [Int]
-            score _ [] = []
-            score i ((_, bet):st) = (bet * i) : score (i + 1) st
+            toJokers :: (Hand, Int) -> (Hand, Int)
+            toJokers (hand, score) = (bestJoker (convertJacks hand), score)
 
     main :: IO ()
     main = do
@@ -63,3 +62,4 @@ where
 
         let plays = processInput input
         putStrLn $ "Part 1: " ++ show (partOne plays)
+        putStrLn $ "Part 2: " ++ show (partTwo plays)

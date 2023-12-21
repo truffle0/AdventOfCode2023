@@ -55,4 +55,4 @@ Language: **Haskell**
 
 [cards](Day7/cards) < [input.txt](Day7/input.txt)
 - [x] Part 1: 250474325
-- [ ] Part 2:
+- [x] Part 2: 248909434
