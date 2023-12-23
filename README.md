@@ -56,3 +56,8 @@ Language: **Haskell**
 [cards](Day7/cards) < [input.txt](Day7/input.txt)
 - [x] Part 1: 250474325
 - [x] Part 2: 248909434
+
+---
+### [Day 8](https://adventofcode.com/2023/day/8)
+- [x] Part 1: 18023
+- [ ] Part 2:
