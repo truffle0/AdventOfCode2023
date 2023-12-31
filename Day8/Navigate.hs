@@ -1,24 +1,37 @@
-module Navigate (Node, name, right, left, Atlas, destination, ntree, createAtlas, followDir)
+module Navigate (Path, name, left, right, asRef, WorldMap, paths, makeMap, newWorldMap, place, followDir, SimpleDir, charToDir)
 where
     import Text.Regex.TDFA
-    import Useful (unmaybe)
+    import General (unmaybe)
 
-    import Data.Map (Map, (!))
+    import Data.Map (Map, (!), elems, member)
     import qualified Data.Map as Map
     
-    --- Node data type ---
-    data Node = Node { name::String, left::Node, right::Node } | Ref { name::String }
+    --- Path data type ---
+    data Path a = (Eq a, Ord a) => Node { name::a, left::Path a, right::Path a } | Ref { name::a }
 
-    instance Show Node where
-        show (Node n left right) = n ++ " = (" ++ name left ++ ", " ++ name right ++ ")"
-        show (Ref n) = n
+    instance Show a => Show (Path a) where
+        show (Node n left right) = show n ++ " = (" ++ show (name left) ++ ", " ++ show (name right) ++ ")"
+        show (Ref n) = show n
 
-    --- Atlas type ---
-    data Atlas = Atlas { ntree::Node, start::String, destination::String }
+    asRef :: a -> Path a
+    asRef = Ref
 
+    --- World Map type ---
+    newtype WorldMap a = WorldMap { refer::Map a (Path a) }
+
+    paths :: WorldMap a -> [Path a]
+    paths (WorldMap wMap) = elems wMap
+
+    --- Simple Direction type ---
+    data SimpleDir = DLeft | DRight
+
+    charToDir :: Char -> SimpleDir
+    charToDir 'L' = DLeft
+    charToDir 'R' = DRight
+    charToDir _ = error "That's not a direction!"
 
     --- Functional functions ---
-    readNode :: String -> Maybe Node
+    readNode :: String -> Maybe (Path String)
     readNode st
         | st =~ re :: Bool = Just (Node name (Ref left) (Ref right))
         | otherwise = Nothing
@@ -26,26 +39,30 @@ where
             re = "([A-Z]+) = \\(([A-Z]+), ([A-Z]+)\\)"
             (_:name:left:right:_) = getAllTextSubmatches (st =~ re) :: [String]
     
-    parseNodes :: [String] -> [Node]
+    parseNodes :: [String] -> [Path String]
     parseNodes strs = unmaybe $ map readNode strs
 
-    nodeMap :: [Node] -> Map String Node
-    nodeMap nodes = Map.fromList (map (\n -> (name n, n)) nodes)
+    makeMap :: Ord a => [Path a] -> Map a (Path a)
+    makeMap nodes = Map.fromList $! map (\n -> (name n, n)) nodes
 
-    tree :: Node -> Map String Node -> Node
-    tree (Ref nod) nodes = tree (nodes ! nod) nodes
-    tree (Node name left right) nodes = Node name (tree left nodes) (tree right nodes)
-
-    createAtlas :: [String] -> String -> String -> Atlas
-    createAtlas input start = Atlas ntr start
+    continuity :: Ord a => WorldMap a -> Bool
+    continuity (WorldMap wmap) = all childPresent nodes
         where
-            nodes = parseNodes input
-            ntr = tree (Ref start) (nodeMap nodes)
+            nodes = elems wmap
+            childPresent n = (name (left n) `member` wmap) && (name (right n) `member` wmap)
+
+    place :: Ord a => Path a -> WorldMap a -> Path a
+    place (Ref nod) wmap = place (refer wmap ! nod) wmap
+    place (Node name left right) nodes = Node name (place left nodes) (place right nodes)
+
+    newWorldMap :: [String] -> WorldMap String
+    newWorldMap st
+        | continuity wmap = wmap
+        | otherwise = error "Map incomplete!"
+        where
+            wmap = WorldMap $! makeMap $ parseNodes st
     
-    followDir :: [Char] -> Node -> [Node]
+    followDir :: [SimpleDir] -> Path a -> [Path a]
     followDir [] _ = []
-    followDir _ (Ref name) = error "Expected node, found reference!"
-    followDir (d:ds) nod
-        | d == 'R' = Ref (name nod) : followDir ds (right nod)
-        | d == 'L' = Ref (name nod) : followDir ds (left nod)
-        | otherwise = error "Invalid direction!"
+    followDir (DRight:ds) nod = Ref (name nod) : followDir ds (right nod)
+    followDir (DLeft:ds) nod = Ref (name nod) : followDir ds (left nod)

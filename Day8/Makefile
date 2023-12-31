@@ -1,7 +1,7 @@
 GHC=ghc
-FLAGS=-O
+FLAGS=-O3 -with-rtsopts="-M2G" -prof -fprof-auto -rtsopts -threaded
 
-navigate: Main.hs Navigate.hs Useful.hs
+navigate: Main.hs Navigate.hs General.hs
 	$(GHC) $(FLAGS) -o $@ $?
 
 clean:

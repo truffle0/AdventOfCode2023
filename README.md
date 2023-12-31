@@ -60,4 +60,4 @@ Language: **Haskell**
 ---
 ### [Day 8](https://adventofcode.com/2023/day/8)
 - [x] Part 1: 18023
-- [ ] Part 2:
+- [ ] Part 2: tried a bunch, code gets stuck in a loop ;-;
