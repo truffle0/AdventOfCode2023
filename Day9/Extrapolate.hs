@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
-module Extrapolate (ExtraPol, parseExtrapol, base, row, rows, predict, extend)
+module Extrapolate (ExtraPol, parseExtrapol, base, row, rows, predict, extend, backtrack)
 where
     import General (pairs, diff, unmaybe)
     import Text.Read (readMaybe)
@@ -70,7 +70,7 @@ where
             recPredict i (x:xs) = recPredict (last x + i) xs
     
     extend :: ExtraPol -> ExtraPol
-    extend (Head dep wid rows) = Head (dep+1) (wid+1) (extend rows)
+    extend (Head wid dep rows) = Head (wid+1) dep (extend rows)
     extend (Base base) = Base base
     extend (Diff base downstream)
         | all (== 0) base = Diff (base ++ [0]) $ extend nextNode
@@ -79,3 +79,14 @@ where
             nextNode = case downstream of
                 Diff row next -> Diff (row ++ [last row + last base]) next
                 Base row -> Base (row ++ [last row + last base])
+    
+    backtrack :: ExtraPol -> ExtraPol
+    backtrack (Head wid dep rows) = Head (wid+1) dep (backtrack rows)
+    backtrack (Base base) = Base base
+    backtrack (Diff base downstream)
+        | all (== 0) base = Diff ( 0 : base) $ backtrack nextNode
+        | otherwise = Diff base $ backtrack nextNode
+        where
+            nextNode = case downstream of
+                Diff row next -> Diff (head row - head base : row) next
+                Base row -> Base (head row - head base : row)

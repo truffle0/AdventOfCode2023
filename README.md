@@ -71,4 +71,4 @@ Language: **Haskell**
 
 [extrapolate](Day9/extrapolate) < [input.txt](Day9/input.txt)
 - [x] Part 1: 1584748274
-- [ ] Part 2:
+- [x] Part 2: 1026

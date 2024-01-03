@@ -4,7 +4,7 @@ where
     import Control.Exception (IOException, catch)
     import System.Environment (getArgs)
 
-    import Extrapolate (ExtraPol, parseExtrapol, base, extend)
+    import Extrapolate (ExtraPol, parseExtrapol, base, extend, backtrack)
 
     readlines :: Handle -> IO [String]
     readlines src = do
@@ -27,6 +27,9 @@ where
     partOne :: [ExtraPol] -> Int
     partOne extras = sum $ map (last . base . extend) extras
 
+    partTwo :: [ExtraPol] -> Int
+    partTwo extras = sum $ map (head . base . backtrack) extras
+
     main :: IO ()
     main = do
         args <- getArgs
@@ -37,3 +40,4 @@ where
         let extrapols = processInput input
 
         putStrLn $ "Part 1: " ++ show (partOne extrapols)
+        putStrLn $ "Part 2: " ++ show (partTwo extrapols)
