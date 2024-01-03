@@ -59,5 +59,16 @@ Language: **Haskell**
 
 ---
 ### [Day 8](https://adventofcode.com/2023/day/8)
+Language: **Haskell**
+
+[navigate](Day8/navigate) < [input.txt](Day8/input.txt)
 - [x] Part 1: 18023
 - [ ] Part 2: tried a bunch, code gets stuck in a loop ;-;
+
+---
+### [Day 9](https://adventofcode.com/2023/day/9)
+Language: **Haskell**
+
+[extrapolate](Day9/extrapolate) < [input.txt](Day9/input.txt)
+- [x] Part 1: 1584748274
+- [ ] Part 2:
