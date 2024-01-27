@@ -72,3 +72,11 @@ Language: **Haskell**
 [extrapolate](Day9/extrapolate) < [input.txt](Day9/input.txt)
 - [x] Part 1: 1584748274
 - [x] Part 2: 1026
+
+---
+### [Day 10 (unfinished)](https://adventofcode.com/2023/day/10)
+Language: **Python**
+
+[maze](Day10/maze.py) < [input.txt](Day10/input.txt)
+- [ ] Part 1:
+- [ ] Part 2: 
