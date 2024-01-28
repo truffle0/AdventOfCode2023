@@ -79,4 +79,12 @@ Language: **Python**
 
 [maze](Day10/maze.py) < [input.txt](Day10/input.txt)
 - [ ] Part 1:
-- [ ] Part 2: 
+- [ ] Part 2:
+
+---
+### [Day 11](https://adventofcode/2023/day/11)
+Language: **Python**
+
+[galaxies.py](Day11/galaxies.py) < [input.txt](Day11/input.txt)
+ - [x] Part 1: 9545480
+ - [ ] Part 2:
